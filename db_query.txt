@@ -1,37 +1,153 @@
--- create  database my_db;
+-- create  database db_mosaicmemory;
 
-use my_db; 
+use db_mosaicmemory; 
 
-select * from Users;
-select * from Token; 
-select * from Follow; 
+select * from users;
+select * from token; 
+select * from follow;
+select * from posts; 
+select * from post_likes;
+select * from post_comments;
 
-create table Users(
-	idx int auto_increment primary key,
-    id varchar(20) not null unique,
-    pw varchar(100) not null,
-    email varchar(100) not null,
-    pf_img varchar(100),
-    pf_name varchar(50),
-    pf_introduction varchar(300),
+-- 가입 유저 
+create table users(
+	user_idx int auto_increment primary key,
+    user_state int default 0, -- 0:정상, 1:탈퇴, 2:정지
+    user_id varchar(20) not null unique,
+    user_pw varchar(100) not null,
+    user_email varchar(100) not null,
+    user_pf_img varchar(100),
+    user_pf_name varchar(50),
+    user_pf_introduction varchar(300),
     reg_date datetime not null default now(),
     mod_date datetime not null default now() on update now()
 );
 
-create table Token(
-	idx int auto_increment primary key,
-    id varchar(20) not null unique,
+-- 로그인 유저 리프레시 토큰
+create table token(
+	token_idx int auto_increment primary key,
+    user_id varchar(20) not null unique,
     refresh_token text not null,
     reg_date datetime not null default now(),
     mod_date datetime not null default now() on update now()
 );
 
-create table Follow(
-	idx int auto_increment primary key,
+-- 팔로워, 팔로잉
+create table follow(
+	follow_idx int auto_increment primary key,
+    state int default 0,
     follower_idx int not null,
     followee_idx int not null,
     reg_data datetime not null default now(),
-    foreign key (follower_idx) references Users(idx) on delete cascade on update cascade,
-    foreign key (followee_idx) references Users(idx) on delete cascade on update cascade
+    foreign key (follower_idx) references users(user_idx),
+    foreign key (followee_idx) references users(user_idx)
 );
 
+-- 게시물
+create table posts(
+	post_idx int auto_increment primary key,
+    state int default 0, -- 0:정상, 1:숨김
+    user_idx int not null,
+    post_file varchar(255),
+    post_description text,
+    like_count int default 0,
+    comment_count int default 0,
+    is_reported boolean default false,
+    report_status int default 0, -- 0:정상, 1:신고접수, 2:처리완료
+    report_details text,
+    reg_date datetime not null default now(),
+    mod_date datetime not null default now() on update now(),
+    foreign key (user_idx) references users(user_idx)
+);
+
+-- 게시물에 대한 좋아요
+create table post_likes(
+	like_idx int auto_increment primary key,
+    state int default 0,
+    user_idx int not null,
+    post_idx int not null,
+    reg_date datetime not null default now(),
+    foreign key (user_idx) references users(user_idx),
+    foreign key (post_idx) references users(user_idx)
+);
+
+-- 게시물에 대한 댓글
+create table post_comments(
+	comment_idx int auto_increment primary key,
+    state int default 0,
+    post_idx int not null,
+    user_idx int not null,
+    comment_text text,
+    reg_date datetime not null default now(),
+    mod_date datetime not null default now() on update now(),
+    foreign key (post_idx) references posts(post_idx),
+    foreign key (user_idx) references users(user_idx)
+);
+
+-- 사용자 탈퇴 시 트리거
+delimiter //
+create trigger user_state_update
+after update on users
+for each row
+begin
+	if new.user_state = 1 then
+		update follow set state = 1 where follower_idx = new.user_idx or followee_idx = new.user_idx;
+        update posts set state = 1 where user_idx = new.user_idx;
+        update post_likes set state = 1 where user_idx = new.user_idx;
+        update post_comments set state = 1 where user_idx = new.user_idx;
+	end if;
+end
+// delimiter ;
+
+-- 사용자 탈퇴 복구 시 트리거
+delimiter //
+create trigger user_state_restore
+after update on users
+for each row
+begin 
+	if new.user_state = 0 then
+		update follow set state = 0 where follower_idx = new.user_idx or followee_idx = new.user_idx;
+        update posts set state = 0 where user_idx = new.user_idx;
+        update post_likes set state = 0 where user_idx = new.user_idx;
+        update post_comments set state = 0 where user_idx = new.user_idx;
+	end if;
+end
+// delimiter ;
+
+-- 스케줄러 이벤트
+delimiter //
+create event delete_expired_users
+on schedule every 1 day
+starts '2024-06-07 00:00:00'
+do
+begin
+	-- 30일 이상 탈퇴 대기 상태인 유저 삭제
+    delete from users where user_state = 1 and reg_date < now() - interval 30 day;
+    
+    -- 연관된 데이터들도 삭제
+    delete from posts where state = 1 and exists (
+        select 1 from users 
+        where user_state = 1 
+        and reg_date < NOW() - interval 30 day 
+        and posts.user_idx = users.user_idx
+    );
+    delete from post_likes where state = 1 and exists (
+        select 1 from users 
+        where user_state = 1 
+        and reg_date < NOW() - interval 30 day 
+        and post_likes.user_idx = users.user_idx
+    );
+    delete from post_comments where state = 1 and exists (
+        select 1 from users 
+        where user_state = 1 
+        and reg_date < NOW() - interval 30 day 
+        and post_comments.user_idx = users.user_idx
+    );
+    delete from token where exists (
+        select 1 from users 
+        where user_state = 1 
+        and reg_date < NOW() - interval 30 day 
+        and token.user_id = users.user_id
+    );
+end
+// delimiter ;

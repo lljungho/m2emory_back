@@ -33,4 +33,10 @@ router.put('/modifyProfile', authenticateJWT, (req, res) => {
     memberService.modifyProfile(req, res);
 });
 
+// 더비 계정 생성
+router.put('/dummy', (req, res) => {
+    console.log('member dummy 100');
+    memberService.dummyUsers(req, res);
+});
+
 module.exports = router;
