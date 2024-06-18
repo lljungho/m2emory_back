@@ -21,6 +21,12 @@ router.get('/signOut', (req, res) => {
     memberService.signOut(req, res);
 });
 
+// 아이디 찾기
+router.post('/forgotId', (req, res) => {
+    console.log('member forgotId.');
+    memberService.forgotId(req, res);
+});
+
 // 유저정보
 router.get('/userInfo', authenticateJWT, (req, res) => {
     console.log('member userInfo.');
