@@ -30,7 +30,7 @@ app.use(express.static(process.env.MEMBER_STATIC_PROFILE_IMG_DIR));
 app.use(passport.initialize());
 
 const memberRouter = require('./routes/memberRouter'); 
-app.use('/member', memberRouter); // signUp, signIn, signOut, userInfo, modifyProfile
+app.use('/member', memberRouter); // signUp, signIn, signOut, forgotId, forgotPw, userInfo, modifyProfile
 
 const uploadRouter = require('./routes/uploadRouter');
 app.use('/upload', authenticateJWT, uploadRouter); // modifyProfileImg, deleteProfileImg
