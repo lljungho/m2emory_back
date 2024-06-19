@@ -27,6 +27,12 @@ router.post('/forgotId', (req, res) => {
     memberService.forgotId(req, res);
 });
 
+// 비밀번호 찾기
+router.post('/forgotPw', (req, res) => {
+    console.log('member forgotPw.');
+    memberService.forgotPw(req, res);
+});
+
 // 유저정보
 router.get('/userInfo', authenticateJWT, (req, res) => {
     console.log('member userInfo.');
