@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const memberService = require('../lib/service/memberService');
-const { authenticateJWT } = require('../lib/auth/passportConfig');
+const { authenticateJWT, accountAuthJWT } = require('../lib/auth/passportConfig');
 
 // 회원가입
 router.post('/signUp', (req, res) => {
@@ -37,6 +37,18 @@ router.post('/forgotPw', (req, res) => {
 router.get('/userInfo', authenticateJWT, (req, res) => {
     console.log('member userInfo.');
     memberService.userInfo(req, res);
+});
+
+// 비밀번호로 로그인 회원 확인
+router.post('/passwordCheck', authenticateJWT, (req, res) => {
+    console.log('member passwordCheck.');
+    memberService.passwordCheck(req, res);
+});
+
+// 회원 확인되었는지 accountToken으로 확인
+router.get('/accountCheck', accountAuthJWT, (req, res) => {
+    console.log('member accountCheck.');
+    memberService.accountCheck(req, res);
 });
 
 // 프로필 내용 수정

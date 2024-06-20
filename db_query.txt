@@ -16,6 +16,7 @@ create table users(
     user_id varchar(20) not null unique,
     user_pw varchar(100) not null,
     user_email varchar(100) not null,
+    user_tel varchar(20) not null,
     user_pf_img varchar(100),
     user_pf_name varchar(50),
     user_pf_introduction varchar(300),
