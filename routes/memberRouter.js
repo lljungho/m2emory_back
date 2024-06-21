@@ -57,6 +57,12 @@ router.put('/modifyProfile', authenticateJWT, (req, res) => {
     memberService.modifyProfile(req, res);
 });
 
+// 계정 정보 수정
+router.put('/modifyAccount', authenticateJWT, (req, res) => {
+    console.log('member modifyAccount.');
+    memberService.modifyAccount(req, res);
+});
+
 // 더비 계정 생성
 router.put('/dummy', (req, res) => {
     console.log('member dummy 100');
