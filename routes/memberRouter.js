@@ -27,7 +27,7 @@ router.post('/forgotId', (req, res) => {
     memberService.forgotId(req, res);
 });
 
-// 비밀번호 찾기
+// 비밀번호 찾기 v
 router.post('/forgotPw', (req, res) => {
     console.log('member forgotPw.');
     memberService.forgotPw(req, res);
